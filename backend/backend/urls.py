@@ -2,12 +2,16 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from workspaces.views import WorkspaceViewSet
+from projects.views import ProjectViewSet
+from tasks.views import TaskViewSet
 
 # 1. Create the router
 router = DefaultRouter()
 
 # 2. Register the Workspace ViewSet
 router.register(r'workspaces', WorkspaceViewSet, basename='workspace')
+router.register(r'projects', ProjectViewSet, basename='project')
+router.register(r'tasks', TaskViewSet, basename='task')
 
 urlpatterns = [
     path('admin/', admin.site.urls),

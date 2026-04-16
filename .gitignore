@@ -1,0 +1,16 @@
+# Secrets
+.env
+backend/.env
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# Local DB (just in case)
+*.sqlite3
+
+# OS files
+.DS_Store
+Thumbs.db

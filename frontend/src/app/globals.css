@@ -1,2 +1,8 @@
 @import "tailwindcss";
 
+@theme {
+  --color-background: white;
+  --color-foreground: black;
+
+
+}

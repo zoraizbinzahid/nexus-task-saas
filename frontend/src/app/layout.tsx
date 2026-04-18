@@ -2,8 +2,11 @@ import type { Metadata } from "next";
 import { Inter, Geist } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import { Sidebar } from "@/components/layout/sidebar";
 import { cn } from "@/lib/utils";
+
+// Importing Components
+import { Sidebar } from "@/components/layout/sidebar";
+import { Navbar } from "@/components/layout/navbar";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
@@ -29,11 +32,14 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <div className="flex h-screen overflow-hidden">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto bg-[#09090b]">
-        {children}
-      </main>
-    </div>
+            <Sidebar />
+            <div className="flex-1 flex flex-col overflow-hidden">
+             <Navbar /> {/* The Navbar sits on top */}
+             <main className="flex-1 overflow-y-auto bg-[#09090b] p-6">
+      {children}
+    </main>
+  </div>
+</div>
         </ThemeProvider>
       </body>
     </html>

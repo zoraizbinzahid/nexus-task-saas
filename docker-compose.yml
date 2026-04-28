@@ -7,6 +7,9 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
+    # This line tells Docker to read your .env file from the root folder
+    env_file:
+      - .env
     environment:
       - PYTHONUNBUFFERED=1
 
@@ -16,6 +19,8 @@ services:
       - "3000:3000"
     volumes:
       - ./frontend:/app
-      - /app/node_modules # This protects your local node_modules from being overwritten
+      - /app/node_modules
+    env_file:
+      - .env
     depends_on:
       - backend

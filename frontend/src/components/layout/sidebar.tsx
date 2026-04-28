@@ -2,21 +2,28 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Briefcase, FolderKanban, CheckSquare, Calendar, Settings, Plus } from "lucide-react"
+import { 
+  LayoutDashboard, 
+  Briefcase, 
+  FolderKanban, 
+  CheckSquare, 
+  Calendar, 
+  Settings 
+} from "lucide-react"
 import { WorkspaceSwitcher } from "./workspace-switcher"
 import { CreateTaskModal } from "../kanban/create-task-modal"
 import { cn } from "@/lib/utils"
 
 const navItems = [
-    {name: "Dashboard", href: "/", icon: LayoutDashboard},
-    {name: "Workspaces", href: "/workspaces", icon: Briefcase},
-    {name: "Projects", href: "/projects", icon: FolderKanban},
-    {name: "Task", href: "/tasks", icon: CheckSquare},
-    {name: "Calendar", href: "/calendar", icon: Calendar},
-    {name: "Settings", href: "/settings", icon: Settings},
+    { name: "Dashboard", href: "/", icon: LayoutDashboard },
+    { name: "Workspaces", href: "/workspaces", icon: Briefcase },
+    { name: "Projects", href: "/projects", icon: FolderKanban },
+    { name: "Task", href: "/tasks", icon: CheckSquare },
+    { name: "Calendar", href: "/calendar", icon: Calendar },
+    { name: "Settings", href: "/settings", icon: Settings },
 ]
 
-export function Sidebar(){
+export function Sidebar() {
     const pathname = usePathname()
 
     return (
@@ -32,7 +39,7 @@ export function Sidebar(){
           </div>
         </div>
 
-        {/* 2. WORKSPACE SWITCHER (The new part!) */}
+        {/* 2. WORKSPACE SWITCHER */}
         <div className="px-4 mb-4">
           <WorkspaceSwitcher />
         </div>
@@ -62,7 +69,6 @@ export function Sidebar(){
           })}
         </nav>
 
-        {/* 4. BOTTOM ACTION BUTTON */}
         {/* 4. BOTTOM ACTION BUTTON */}
         <div className="p-4 border-t border-gray-800">
           <CreateTaskModal />

@@ -3,10 +3,12 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import api from "@/lib/axios"
-import axios from "axios" // Added for error checking
+import axios from "axios"
+import Link from "next/link" // 👈 Added this for the register link
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { toast } from "sonner";
 
 export default function LoginPage() {
     const [email, setEmail] = useState("")
@@ -16,35 +18,33 @@ export default function LoginPage() {
     const router = useRouter()
 
     const handleLogin = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setError("")
-        setIsLoading(true)
+        e.preventDefault();
+        setError("");
+        setIsLoading(true);
 
         try {
-            // DEEP RESEARCH FIX: Based on your settings.py, dj-rest-auth 
-            // usually lives at /dj-rest-auth/login/ or /api/auth/login/
-            // Change this to match your backend urls.py
-            await api.post("/auth/login/", { 
-                username: email, // dj-rest-auth sometimes looks for 'username' even if it's an email
-                email: email, 
-                password: password 
-            })
+            await api.post("/auth/login/", {
+                email: email,
+                password: password
+            });
 
-            // Cookie is now set! Send them home.
-            router.push("/")
-            router.refresh()
+            toast.success("Welcome back to Nexus!");
+            router.push("/");
+            router.refresh();
         } catch (err: unknown) {
+            setIsLoading(false);
             if (axios.isAxiosError(err)) {
-                // Shows the actual error from Django (e.g. "Unable to log in with provided credentials")
-                const msg = err.response?.data?.non_field_errors?.[0] || "Login failed."
-                setError(msg)
+                const serverMessage = err.response?.data?.non_field_errors?.[0] 
+                                    || err.response?.data?.detail 
+                                    || "Invalid email or password.";
+                setError(serverMessage);
             } else {
-                setError("An unexpected error occurred.")
+                setError("An unexpected error occurred.");
             }
         } finally {
-            setIsLoading(false)
+            setIsLoading(false);
         }
-    }
+    };
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-[#0b0c10] p-4">
@@ -58,14 +58,14 @@ export default function LoginPage() {
                 <CardContent>
                     <form onSubmit={handleLogin} className="space-y-4">
                         {error && (
-                            <p className="text-xs text-red-500 bg-red-500/10 p-2 rounded border border-red-500/20">
+                            <p className="text-xs text-red-500 bg-red-500/10 p-2 rounded border border-red-500/20 text-center">
                                 {error}
                             </p>
                         )}
                         <Input
                             type="email"
                             placeholder="Admin Email"
-                            className="bg-gray-900 border-gray-700 focus:border-blue-500 transition-all"
+                            className="bg-gray-900 border-gray-700 focus:border-blue-500 transition-all text-white"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
@@ -73,7 +73,7 @@ export default function LoginPage() {
                         <Input
                             type="password"
                             placeholder="Password"
-                            className="bg-gray-900 border-gray-700 focus:border-blue-500 transition-all"
+                            className="bg-gray-900 border-gray-700 focus:border-blue-500 transition-all text-white"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
@@ -86,6 +86,17 @@ export default function LoginPage() {
                             {isLoading ? "Authenticating..." : "Unlock Workspace"}
                         </Button>
                     </form>
+
+                    {/* 🚀 Registration Link added here */}
+                    <div className="mt-6 text-center text-sm text-gray-500">
+                        Not a member?{" "}
+                        <Link 
+                            href="/register" 
+                            className="text-blue-500 hover:text-blue-400 font-medium transition-colors"
+                        >
+                            Register now
+                        </Link>
+                    </div>
                 </CardContent>
             </Card>
         </div>

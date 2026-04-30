@@ -10,7 +10,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
-ALLOWED_HOSTS = ['*'] # Allows local development access
+
+# Detect if we are on Localhost or Production
+IS_PRODUCTION = os.getenv('RAILWAY_ENVIRONMENT') is not None or not DEBUG
+
+# --- SECURITY ---
+ALLOWED_HOSTS = ['*'] # Railway/Vercel handle this, but you can restrict later
 
 # --- APPS ---
 INSTALLED_APPS = [
@@ -60,47 +65,76 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'backend.urls'
 
+# --- CORS & CSRF ---
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
 
+# Dynamically add production frontend URL if it exists in .env
+PROD_FRONTEND_URL = os.getenv('FRONTEND_URL')
+if PROD_FRONTEND_URL:
+    CORS_ALLOWED_ORIGINS.append(PROD_FRONTEND_URL)
+
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ALL_ORIGINS = True
+
+# Required for cross-domain CSRF (Vercel -> Railway)
+CSRF_TRUSTED_ORIGINS = ["http://localhost:3000"]
+if os.getenv('BACKEND_URL'):
+    CSRF_TRUSTED_ORIGINS.append(os.getenv('BACKEND_URL'))
 
 # --- AUTH CONFIG ---
 AUTH_USER_MODEL = 'accounts.User'
-
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
-# --- REST & JWT ---
+# --- SAAS ACCOUNT LOGIC ---
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = True 
+ACCOUNT_USER_MODEL_USERNAME_FIELD = 'username'
+ACCOUNT_EMAIL_VERIFICATION = 'none' 
+ACCOUNT_CONFIRM_EMAIL_ON_GET = True
+
+# --- REST & JWT CONFIG (AUTO-ADAPTING) ---
 REST_USE_JWT = True
 JWT_AUTH_COOKIE = 'nexus-auth'
 JWT_AUTH_REFRESH_COOKIE = 'nexus-refresh-token'
+
+REST_AUTH = {
+    'USE_JWT': True,
+    'JWT_AUTH_COOKIE': 'nexus-auth',
+    'JWT_AUTH_REFRESH_COOKIE': 'nexus-refresh-token',
+    'JWT_AUTH_HTTPONLY': False,  # Changed to False so frontend can clear it on logout easily
+    'JWT_AUTH_SECURE': IS_PRODUCTION,    # True in Production (HTTPS), False in Local (HTTP)
+    'JWT_AUTH_SAMESITE': 'None' if IS_PRODUCTION else 'Lax', # None for Cross-Domain, Lax for Local
+}
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'dj_rest_auth.jwt_auth.JWTCookieAuthentication',
     ),
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
 }
 
-# --- SAAS ACCOUNT LOGIC ---
-# Updated to stop ALL deprecation and conflict warnings
-ACCOUNT_LOGIN_METHODS = {'email'}
-ACCOUNT_SIGNUP_FIELDS = ['email*']
-ACCOUNT_EMAIL_VERIFICATION = 'none' 
-ACCOUNT_CONFIRM_EMAIL_ON_GET = True
+# --- DATABASE (NEON/LOCAL) ---
+DATABASES = {
+    'default': dj_database_url.config(
+        default=os.getenv('DATABASE_URL'),
+        conn_max_age=600,
+        # Only require SSL if we are NOT on localhost
+        ssl_require=IS_PRODUCTION 
+    )
+}
 
-# Note: We deleted ACCOUNT_USERNAME_REQUIRED and ACCOUNT_EMAIL_REQUIRED
-# as they are now handled by the two lines above.
-
-# Development Email (Console) - Prints signup emails to terminal
+# --- MAIL SETTINGS ---
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-# --- TEMPLATES & WSGI ---
+# --- REMAINING STANDARD SETTINGS ---
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -118,12 +152,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'backend.wsgi.application'
 
-# --- DATABASE ---
-DATABASES = {
-    'default': dj_database_url.config(default=os.getenv('DATABASE_URL'))
-}
-
-# --- VALIDATION & L10N ---
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -135,11 +163,9 @@ LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
-
 STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# --- SOCIAL AUTH ---
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
         'APP': {
@@ -147,12 +173,7 @@ SOCIALACCOUNT_PROVIDERS = {
             'secret': os.getenv('GOOGLE_CLIENT_SECRET'),
             'key': ''
         },
-        'SCOPE': [
-            'profile',
-            'email',
-        ],
-        'AUTH_PARAMS': {
-            'access_type': 'online',
-        }
+        'SCOPE': ['profile', 'email'],
+        'AUTH_PARAMS': {'access_type': 'online'}
     }
 }

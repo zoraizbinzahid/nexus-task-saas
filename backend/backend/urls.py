@@ -4,6 +4,7 @@ from rest_framework.routers import DefaultRouter
 from workspaces.views import WorkspaceViewSet
 from projects.views import ProjectViewSet
 from tasks.views import TaskViewSet
+from accounts.views import DeleteAccountView
 
 # 1. Create the router
 router = DefaultRouter()
@@ -26,4 +27,5 @@ urlpatterns = [
     path('api/auth/', include('dj_rest_auth.urls')),
     path('api/auth/registration/', include('dj_rest_auth.registration.urls')),
     path('api/auth/social/', include('allauth.socialaccount.urls')),
+    path('api/auth/account/delete/', DeleteAccountView.as_view(), name='account-delete'),
 ]

@@ -3,42 +3,70 @@
 import { useEffect, useState } from "react";
 import api from "@/lib/axios";
 import { toast } from "sonner";
-
-// 1. Define exactly what a Workspace looks like from your Django backend
-interface Workspace {
-    id: number | string;
-    name: string;
-    slug: string;
-    description?: string;
-}
+import type { ApiError, Workspace } from "@/types/domain";
+import { addAppNotification } from "@/lib/notifications";
 
 export default function WorkspacesPage() {
-    // 2. Tell the state it will hold an Array of Workspaces
     const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [name, setName] = useState("");
+    const [isCreating, setIsCreating] = useState(false);
 
     useEffect(() => {
         api.get<Workspace[]>("/workspaces/")
             .then(res => {
                 setWorkspaces(res.data);
             })
-            .catch(() => {
+            .catch((err: unknown) => {
+                const apiError = err as ApiError;
+                if (apiError.response?.status !== 401) {
                 toast.error("Failed to load workspaces.");
+                }
             })
             .finally(() => {
                 setIsLoading(false);
             });
     }, []);
 
+    const createWorkspace = async () => {
+        if (!name.trim()) return;
+        setIsCreating(true);
+        try {
+            const res = await api.post<Workspace>("/workspaces/", { name: name.trim() });
+            setWorkspaces((prev) => [...prev, res.data]);
+            setName("");
+            toast.success("Workspace created");
+            addAppNotification(`Workspace "${res.data.name}" created.`);
+        } catch {
+            toast.error("Could not create workspace");
+        } finally {
+            setIsCreating(false);
+        }
+    };
+
     return (
         <div className="p-8 text-white min-h-screen bg-[#0b0c10]">
             <h1 className="text-3xl font-bold mb-6">Your Workspaces</h1>
+            <div className="mb-6 flex gap-2 max-w-md">
+                <input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Workspace name"
+                    className="flex-1 bg-[#1a1c23] border border-gray-800 rounded-lg px-3 py-2"
+                />
+                <button
+                    onClick={createWorkspace}
+                    disabled={isCreating}
+                    className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-sm font-semibold disabled:opacity-60"
+                >
+                    {isCreating ? "Creating..." : "Make Workspace"}
+                </button>
+            </div>
             
             {isLoading ? (
                 <div className="text-gray-500">Loading your engine...</div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* 3. No 'any' needed! TS now knows 'ws' is a Workspace */}
                     {workspaces.map((ws) => (
                         <div 
                             key={ws.id} 
@@ -53,9 +81,6 @@ export default function WorkspacesPage() {
                         </div>
                     ))}
                     
-                    <div className="p-6 border-2 border-dashed border-gray-800 rounded-xl flex items-center justify-center text-gray-500 hover:text-white hover:border-gray-600 transition-all cursor-pointer">
-                        + New Workspace
-                    </div>
                 </div>
             )}
         </div>
